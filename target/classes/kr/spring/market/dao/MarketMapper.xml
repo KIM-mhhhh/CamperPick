@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper   
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.spring.market.dao.MarketMapper">
+	<select id="getMarketList" parameterType="map" resultType="marketVO">
+		select
+		*
+		from(select
+				a.*,
+				rownum rnum
+			 from (select
+			 			m.market_num,
+			 			<![CDATA[
+			 			REPLACE(REPLACE(m.title,'<','&lt;'),'>','&gt;') title,
+			 			]]>
+			 			m.hit,
+			 			m.reg_date,
+			 			m.mem_num,
+			 			m.state,
+			 			m.choice,
+			 			d.name
+			 		from cmarket m join cmember_detail d on m.mem_num = d.mem_num
+			 		<where>
+			 			<if test="keyword != '' and keyfield == 1">
+			 				m.title like '%' || #{keyword} || '%'
+			 			</if>
+			 			<if test="keyword != '' and keyfield == 2">
+			 				d.name like '%' || #{keyword} || '%'
+			 			</if>
+			 			<if test="keyword != '' and keyfield == 3">
+			 				m.content like '%' || #{keyword} || '%'
+			 			</if>
+			 			<if test="keyword != '' and keyfield == 4">
+			 				m.content like '%' || #{keyword} || '%' or
+			 				m.title like '%' || #{keyword} || '%'
+			 			</if>
+			 		</where>
+			 		order by m.market_num desc)a)
+		<![CDATA[
+			where rnum >= #{start} and rnum <= #{end}
+		]]>
+	</select>
+	
+	<select id="getMarketCount" parameterType="map" resultType="integer">
+		select 
+		 count(*)
+		from cmarket m join cmember_detail d on m.mem_num = d.mem_num
+		<where>
+			<if test="keyword != '' and keyfield == 1">
+				m.title like '%' || #{keyword} || '%'
+			</if>
+			<if test="keyword != '' and keyfield == 2">
+				d.name like '%' || #{keyword} || '%'
+			</if>
+			<if test="keyword != '' and keyfield == 3">
+				m.content like '%' || #{keyword} || '%'
+			</if>
+			<if test="keyword != '' and keyfield == 4">
+				m.content like '%' || #{keyword} || '%' or
+				m.title like '%' || #{keyword} || '%'
+			</if>
+		</where>	
+	</select>
+	
+	<update id="updateMarket" parameterType="marketVO">
+		 UPDATE cmarket SET
+            <!-- 파일명이 있다면 파일을 업데이트 해주지만, 없다면 아래만 업데이트 -->
+            title=#{title},
+            content=#{content},
+            ip=#{ip},
+            state=#{state},
+            choice=#{choice},
+            modify_date= SYSDATE
+         WHERE market_num=#{market_num}  		
+	</update>
+	
+	 <!-- 댓글 목록 -->
+	<select id="selectListReply" parameterType="map" resultType="marketReplyVO">
+		SELECT
+		  *
+		FROM (SELECT 
+		        a.*,
+		        rownum rnum
+		      FROM (SELECT 
+		              b.mre_num,
+		  			  b.re_content,
+		              TO_CHAR(b.re_date,'YYYY-MM-DD HH24:MI:SS') re_date,
+		              TO_CHAR(b.re_modifydate,'YYYY-MM-DD HH24:MI:SS') re_modifydate,
+		              b.market_num,
+		              b.mem_num,
+		              m.name
+		            FROM cmarket_reply b JOIN cmember_detail m ON b.mem_num=m.mem_num
+		            WHERE b.market_num = #{market_num}
+		            ORDER BY b.mre_num DESC)a)
+		<![CDATA[
+		WHERE rnum >= #{start} AND rnum <= #{end}
+		]]>
+	</select>
+	
+	<!-- 댓글 총 갯수 -->
+	<select id="selectRowCountReply" parameterType="map" resultType="integer">
+		SELECT
+		   COUNT(*)
+		FROM cmarket_reply b JOIN cmember_detail m ON b.mem_num=m.mem_num
+		WHERE b.market_num = #{market_num}
+	</select>
+	
+	<!-- 대댓글 -->
+	<select id="getReReplyList" parameterType="map" resultType="marketReReplyVO">
+		SELECT
+		  *
+		FROM (SELECT 
+		        a.*,
+		        rownum rnum
+		      FROM (SELECT 
+		      		  b.mrre_num,
+		              m.mre_num,
+		  			  b.re_content,
+		  			  b.re_ip,
+		              TO_CHAR(b.re_date,'YYYY-MM-DD HH24:MI:SS') re_date,
+		              TO_CHAR(b.re_modifydate,'YYYY-MM-DD HH24:MI:SS') re_modifydate,
+		              m.market_num,
+		              b.mem_num
+		            FROM cmarket_reply2 b JOIN cmarket_reply m ON b.mre_num=m.mre_num
+		            WHERE b.mre_num = #{mre_num}
+		            ORDER BY b.mrre_num DESC)a)
+		<![CDATA[
+		WHERE rnum >= #{start} AND rnum <= #{end}
+		]]> 
+		 
+		 
+	</select>
+	
+	<!-- 대댓글 총 갯수 -->
+	<select id="getReReplyCount" parameterType="map" resultType="integer">
+		SELECT
+		   COUNT(*)
+		FROM cmarket_reply2 b JOIN cmarket_reply m ON b.mre_num=m.mre_num
+		WHERE b.mre_num = #{mre_num}
+	</select>
+</mapper>  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
